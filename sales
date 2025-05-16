@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Ganhos com Tráfego Pago</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTTXJQVwTPnT7iNMRZJ7wJ6Vf1SRK5X5fRz0/FFZ5F1FxFZTl9Z8M5HJzklW0KYyo1I+T6Hxg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+    body {
+      background: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container {
+      background-color: #111827;
+      padding: 2rem;
+      border-radius: 20px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+    }
+    .saldo-container {
+      background-color: #1f2937;
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0px rgba(34,197,94, 0.7); }
+      50% { box-shadow: 0 0 20px rgba(34,197,94, 0.7); }
+      100% { box-shadow: 0 0 0px rgba(34,197,94, 0.7); }
+    }
+    .saldo-container span {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #22c55e;
+    }
+    .question {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .option-btn {
+      background-color: #2563eb;
+      color: #fff;
+      padding: 1rem;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .option-btn:hover {
+      background-color: #1d4ed8;
+    }
+    .progress-bar {
+      background-color: #4b5563;
+      border-radius: 12px;
+      overflow: hidden;
+      height: 20px;
+      margin: 1.5rem 0;
+    }
+    .progress {
+      height: 100%;
+      background-color: #22c55e;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+    .final-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    .grafico {
+      background-color: #1f2937;
+      border-radius: 12px;
+      padding: 1rem;
+      margin: 1rem 0;
+      width: 100%;
+    }
+    .btn-final {
+      background-color: #f97316;
+      color: #fff;
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="saldo-container">
+      <div>Saldo em vendas:</div>
+      <span id="saldo">R$0</span>
+    </div>
+
+    <div id="quiz">
+      <div class="question" id="pergunta"></div>
+      <div class="options" id="opcoes"></div>
+      <div class="progress-bar">
+        <div class="progress" id="barraProgresso"></div>
+      </div>
+    </div>
+
+    <div class="final-screen" id="final">
+      <h2>Parabéns! Veja seu desempenho:</h2>
+      <div class="grafico">
+        <p><strong>Investimento:</strong> R$79,90</p>
+        <p><strong>Lucro Obtido:</strong> R$141,10</p>
+      </div>
+      <a class="btn-final" href="https://pay.kiwify.com.br/o2riD9Z?afid=IRHhCQjM">Acessar Treinamento</a>
+    </div>
+  </div>
+
+  <audio id="sound">
+    <source src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" type="audio/mp3">
+  </audio>
+
+  <script>
+    const perguntas = [
+      "Vamos configurar sua primeira campanha. Você quer vender:",
+      "Vamos definir seu Publico:",
+      "Escolha o valor para investir por dia:",
+      "Qual objetivo do seu anúncio?",
+      "Qual o seu público alvo?",
+      "Você quer vender pelo WhatsApp ou Página de Vendas?",
+      "Pronto para fazer sua primeira venda hoje?"
+    ];
+
+    const opcoes = [
+      ["Produtos Físicos", "Produtos Digitais"],
+      [" Mulheres - Emagrecimento", "H/M - Marketing Digital", "Mulheres - Beleza"],
+      ["R$10", "R$17", "R$28"],
+      ["Conversão", "Tráfego", "Engajamento"],
+      ["Homens", "Mulheres", "Ambos"],
+      ["WhatsApp", "Página de Vendas"],
+      ["Sim!", "Ainda não"]
+    ];
+
+    const valores = [27, 19, 33, 18, 26, 38, 60];
+    let etapa = 0;
+    let saldo = 0;
+
+    const perguntaEl = document.getElementById("pergunta");
+    const opcoesEl = document.getElementById("opcoes");
+    const saldoEl = document.getElementById("saldo");
+    const barra = document.getElementById("barraProgresso");
+    const final = document.getElementById("final");
+    const quiz = document.getElementById("quiz");
+    const audio = document.getElementById("sound");
+
+    function mostrarPergunta() {
+      perguntaEl.textContent = perguntas[etapa];
+      opcoesEl.innerHTML = "";
+      opcoes[etapa].forEach((opcao, idx) => {
+        const btn = document.createElement("button");
+        btn.textContent = opcao;
+        btn.classList.add("option-btn");
+        btn.onclick = () => proximaEtapa();
+        opcoesEl.appendChild(btn);
+      });
+    }
+
+    function proximaEtapa() {
+      saldo += valores[etapa];
+      saldoEl.textContent = `R$${saldo.toFixed(2).replace(".", ",")}`;
+      barra.style.width = `${((etapa + 1) / perguntas.length) * 100}%`;
+      audio.play();
+
+      etapa++;
+      if (etapa < perguntas.length) {
+        mostrarPergunta();
+      } else {
+        quiz.style.display = "none";
+        final.style.display = "flex";
+      }
+    }
+
+    mostrarPergunta();
+  </script>
+</body>
+</html>
